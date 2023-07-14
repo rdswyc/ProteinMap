@@ -23,7 +23,7 @@ class Pfam(models.Model):
     description = models.CharField(max_length=100, null=False, blank=False)
 
 class Domain(models.Model):
-    protein = models.ForeignKey(Protein, on_delete=models.CASCADE)
+    protein = models.ForeignKey(Protein, on_delete=models.CASCADE, related_name='domains')
     pfam = models.ForeignKey(Pfam, on_delete=models.CASCADE)
     description = models.CharField(max_length=200, null=False, blank=False)
     start = models.IntegerField(null=False, blank=False)
