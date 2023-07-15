@@ -60,6 +60,22 @@ class ProteinSerializer(serializers.ModelSerializer):
 
         return protein
 
+    def validate_sequence(self, value):
+        if not all(a in 'ACDEFGHIKLMNPQRSTVWY' for a in value):
+            raise serializers.ValidationError('Sequence contains invalid amino acids')
+        return value
+
+    def validate_length(self, value):
+        if value != len(self.initial_data.get('sequence')):
+            raise serializers.ValidationError('Protein length and sequence length should be the same')
+        return value
+
+    def validate_domains(self, value):
+        for domain in value:
+            if domain['start'] > domain['stop']:
+                raise serializers.ValidationError('Domain stop must be greaten than start')
+        return value
+
 class ProteinListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Protein
