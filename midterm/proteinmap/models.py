@@ -14,9 +14,12 @@ class Protein(models.Model):
     length = models.IntegerField(null=False, blank=False)
     organism = models.ForeignKey(Organism, null=False, on_delete=models.CASCADE)
 
+    def __str__(self):
+        return self.protein_id
+
 class Sequence(models.Model):
     protein = models.OneToOneField(Protein, on_delete=models.CASCADE, primary_key=True, related_name='sequence')
-    sequence = models.CharField(max_length=40000, null=False, blank=True)
+    sequence = models.TextField(max_length=40000, null=False, blank=True)
 
     def __str__(self):
         return self.sequence
@@ -24,6 +27,9 @@ class Sequence(models.Model):
 class Pfam(models.Model):
     pfam_id = models.CharField(primary_key=True, max_length=20, blank=False)
     description = models.CharField(max_length=100, null=False, blank=False)
+
+    def __str__(self):
+        return self.pfam_id
 
 class Domain(models.Model):
     protein = models.ForeignKey(Protein, on_delete=models.CASCADE, related_name='domains')

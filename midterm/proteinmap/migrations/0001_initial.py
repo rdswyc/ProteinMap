@@ -40,7 +40,7 @@ class Migration(migrations.Migration):
             name='Sequence',
             fields=[
                 ('protein', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, primary_key=True, related_name='sequence', serialize=False, to='proteinmap.Protein')),
-                ('sequence', models.CharField(blank=True, max_length=40000)),
+                ('sequence', models.TextField(blank=True, max_length=40000)),
             ],
         ),
         migrations.CreateModel(
