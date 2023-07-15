@@ -3,6 +3,7 @@ from django.urls import path
 from . import api
 
 urlpatterns = [
+    path('api/protein/', api.ProteinCreate.as_view()),
     path('api/protein/<str:pk>/', api.ProteinDetail.as_view()),
     path('api/pfam/<str:pk>/', api.PfamDetail.as_view()),
     path('api/proteins/<str:taxa>', api.OrganismProteins.as_view()),

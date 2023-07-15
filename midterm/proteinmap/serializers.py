@@ -3,6 +3,11 @@ from rest_framework import serializers
 from .models import *
 
 class OrganismSerializer(serializers.ModelSerializer):
+    taxa_id = serializers.IntegerField(validators=[])
+    clade = serializers.CharField(read_only=True)
+    genus = serializers.CharField(read_only=True)
+    species = serializers.CharField(read_only=True)
+
     class Meta:
         model = Organism
         fields = ['taxa_id', 'clade', 'genus', 'species']
@@ -30,13 +35,30 @@ class DomainListSerializer(serializers.ModelSerializer):
         fields = ['id', 'pfam_id']
 
 class ProteinSerializer(serializers.ModelSerializer):
-    sequence = serializers.SlugRelatedField(queryset=Sequence.objects.all(), slug_field='sequence')
-    taxonomy = OrganismSerializer(source='organism')
+    sequence = serializers.CharField(allow_null=True, style={'base_template': 'textarea.html'})
+    taxonomy = OrganismSerializer(source='organism', style={'base_template': 'fieldset.html', 'hide_label': True})
     domains = DomainSerializer(many=True)
 
     class Meta:
         model = Protein
         fields = ['protein_id', 'sequence', 'taxonomy', 'length', 'domains']
+
+    def create(self, validated_data):
+        sequence = validated_data.pop('sequence')
+        domains = validated_data.pop('domains')
+        taxa_id = validated_data.pop('organism')['taxa_id']
+
+        organism = Organism.objects.get(pk=taxa_id)
+        protein = Protein.objects.create(organism=organism, **validated_data)
+
+        if sequence is not None:
+            Sequence.objects.create(protein=protein, sequence=sequence)
+
+        for domain in domains:
+            pfam = Pfam.objects.get(pk=domain.pop('pfam')['pfam_id'])
+            Domain.objects.create(protein=protein, pfam=pfam, **domain)
+
+        return protein
 
 class ProteinListSerializer(serializers.ModelSerializer):
     class Meta:

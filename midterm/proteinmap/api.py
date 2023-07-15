@@ -6,6 +6,10 @@ from rest_framework.response import Response
 from .models import *
 from .serializers import *
 
+class ProteinCreate(generics.CreateAPIView):
+    queryset = Protein.objects.all()  
+    serializer_class = ProteinSerializer
+
 class ProteinDetail(generics.RetrieveAPIView):
     queryset = Protein.objects.all()  
     serializer_class = ProteinSerializer
