@@ -1,0 +1,227 @@
+openapi: 3.0.2
+info:
+  title: ''
+  version: ''
+paths:
+  /api/protein/{protein_id}/:
+    get:
+      operationId: retrieveProtein
+      description: ''
+      parameters:
+      - name: protein_id
+        in: path
+        required: true
+        description: A unique value identifying this protein.
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Protein'
+          description: ''
+      tags:
+      - api
+  /api/pfam/{pfam_id}/:
+    get:
+      operationId: retrievePfam
+      description: ''
+      parameters:
+      - name: pfam_id
+        in: path
+        required: true
+        description: A unique value identifying this pfam.
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pfam'
+          description: ''
+      tags:
+      - api
+  /api/proteins/{taxa}:
+    get:
+      operationId: retrieveProteinList
+      description: ''
+      parameters:
+      - name: taxa
+        in: path
+        required: true
+        description: ''
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProteinList'
+          description: ''
+      tags:
+      - api
+  /api/pfams/{taxa}:
+    get:
+      operationId: retrieveDomainList
+      description: ''
+      parameters:
+      - name: taxa
+        in: path
+        required: true
+        description: ''
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DomainList'
+          description: ''
+      tags:
+      - api
+  /api/coverage/{protein_id}:
+    get:
+      operationId: retrievedomain_coverage
+      description: ''
+      parameters:
+      - name: protein_id
+        in: path
+        required: true
+        description: ''
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema: {}
+          description: ''
+      tags:
+      - api
+  /api/protein/:
+    post:
+      operationId: createProtein
+      description: ''
+      parameters: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Protein'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Protein'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Protein'
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Protein'
+          description: ''
+      tags:
+      - api
+components:
+  schemas:
+    Protein:
+      type: object
+      properties:
+        protein_id:
+          type: string
+          maxLength: 12
+        sequence:
+          type: string
+          nullable: true
+        taxonomy:
+          type: object
+          properties:
+            taxa_id:
+              type: integer
+            clade:
+              type: string
+              readOnly: true
+            genus:
+              type: string
+              readOnly: true
+            species:
+              type: string
+              readOnly: true
+          required:
+          - taxa_id
+        length:
+          type: integer
+        domains:
+          type: array
+          items:
+            type: object
+            properties:
+              pfam_id:
+                type: object
+                properties:
+                  domain_id:
+                    type: string
+                  domain_description:
+                    type: string
+                required:
+                - domain_id
+                - domain_description
+              description:
+                type: string
+                maxLength: 200
+              start:
+                type: integer
+              stop:
+                type: integer
+            required:
+            - pfam_id
+            - description
+            - start
+            - stop
+      required:
+      - protein_id
+      - sequence
+      - taxonomy
+      - length
+      - domains
+    Pfam:
+      type: object
+      properties:
+        domain_id:
+          type: string
+        domain_description:
+          type: string
+      required:
+      - domain_id
+      - domain_description
+    ProteinList:
+      type: object
+      properties:
+        protein_id:
+          type: string
+          maxLength: 12
+      required:
+      - protein_id
+    DomainList:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        pfam_id:
+          type: object
+          properties:
+            domain_id:
+              type: string
+            domain_description:
+              type: string
+          required:
+          - domain_id
+          - domain_description
+      required:
+      - pfam_id
