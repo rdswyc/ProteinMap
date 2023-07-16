@@ -1,6 +1,8 @@
 from rest_framework import serializers
 
+from django.conf import settings
 from .models import *
+
 
 class OrganismSerializer(serializers.ModelSerializer):
     taxa_id = serializers.IntegerField(validators=[])
@@ -61,7 +63,7 @@ class ProteinSerializer(serializers.ModelSerializer):
         return protein
 
     def validate_sequence(self, value):
-        if not all(a in 'ACDEFGHIKLMNPQRSTVWY' for a in value):
+        if not all(a in settings.AMINOACIDS for a in value):
             raise serializers.ValidationError('Sequence contains invalid amino acids')
         return value
 
