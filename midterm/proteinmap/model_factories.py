@@ -1,8 +1,9 @@
-import factory
-from random import choices, randint
-
 from django.conf import settings
+from random import choices, randint
+import factory
+
 from .models import *
+from .serializers import *
 
 class OrganismFactory(factory.django.DjangoModelFactory):
     taxa_id = randint(1, 100000)
@@ -39,8 +40,22 @@ class DomainFactory(factory.django.DjangoModelFactory):
     protein = factory.SubFactory(ProteinFactory)
     pfam = factory.SubFactory(PfamFactory)
     description = factory.Faker('sentence', nb_words=2)
-    start = randint(1, 1000)
-    stop = randint(1, 1000)
+    start = randint(1, 500)
+    stop = randint(501, 1000)
 
     class Meta:
         model = Domain
+
+
+class ProteinSerializerFactory(factory.DictFactory):
+    protein_id = ProteinFactory.build().protein_id
+    sequence = SequenceFactory.build().sequence
+    taxonomy = organism = OrganismFactory.build().__dict__
+    length = len(sequence)
+    domains = [{
+        **d.__dict__,
+        'pfam_id': {
+            'domain_id': PfamFactory.build().pfam_id,
+            'domain_description': PfamFactory.build().description
+        }
+    } for d in DomainFactory.build_batch(3)]
