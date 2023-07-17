@@ -15,7 +15,7 @@ class OrganismFactory(factory.django.DjangoModelFactory):
         model = Organism
 
 class ProteinFactory(factory.django.DjangoModelFactory):
-    protein_id = hex(randint(1, 100000))[2:]
+    protein_id = factory.Sequence(lambda n: 'protein%d' % n)
     length = randint(1, 1000)
     organism = factory.SubFactory(OrganismFactory)
 
@@ -30,7 +30,7 @@ class SequenceFactory(factory.django.DjangoModelFactory):
         model = Sequence
 
 class PfamFactory(factory.django.DjangoModelFactory):
-    pfam_id = hex(randint(1, 100000))[2:]
+    pfam_id = factory.Sequence(lambda n: 'pfam%d' % n)
     description = factory.Faker('sentence', nb_words=2)
 
     class Meta:
@@ -55,7 +55,7 @@ class ProteinSerializerFactory(factory.DictFactory):
     domains = [{
         **d.__dict__,
         'pfam_id': {
-            'domain_id': PfamFactory.build().pfam_id,
-            'domain_description': PfamFactory.build().description
+            'domain_id': d.pfam.pfam_id,
+            'domain_description': d.pfam.description
         }
     } for d in DomainFactory.build_batch(3)]

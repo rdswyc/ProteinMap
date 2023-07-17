@@ -1,5 +1,6 @@
 from django.db.models import Sum
-from rest_framework import generics
+from django.http import HttpResponse
+from rest_framework import generics, status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
@@ -35,6 +36,10 @@ class OrganismPfams(generics.ListAPIView):
 @api_view(['GET'])
 def domain_coverage(request, protein_id):
     queryset = Domain.objects.filter(protein=protein_id)
+
+    if not queryset.exists():
+        return HttpResponse(status=status.HTTP_404_NOT_FOUND)
+
     sums = queryset.aggregate(Sum('stop'), Sum('start'))
     length = queryset.values_list('protein__length')[0][0]
     coverage = (sums['stop__sum'] - sums['start__sum']) / length

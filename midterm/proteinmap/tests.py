@@ -1,10 +1,14 @@
+import json
+from django.test import TestCase
+from django.urls import reverse
+from rest_framework import status
 from rest_framework.test import APITestCase
 
 from .model_factories import *
 from .serializers import *
 
 
-class OrganismSerializerTest(APITestCase):
+class OrganismSerializerTest(TestCase):
     organism = None
     serializer = None
 
@@ -24,7 +28,7 @@ class OrganismSerializerTest(APITestCase):
         self.assertEqual(data['taxa_id'], 1)
         self.assertEqual(data['genus'], self.organism.genus)
 
-class PfamSerializerTest(APITestCase):
+class PfamSerializerTest(TestCase):
     pfam = None
     serializer = None
 
@@ -44,7 +48,7 @@ class PfamSerializerTest(APITestCase):
         self.assertEqual(data['domain_id'], 'A')
         self.assertEqual(data['domain_description'], self.pfam.description)
 
-class DomainSerializerTest(APITestCase):
+class DomainSerializerTest(TestCase):
     domain = None
     pfam = None
     serializer = None
@@ -70,7 +74,7 @@ class DomainSerializerTest(APITestCase):
         data = self.serializer.data
         self.assertEqual(data['pfam_id']['domain_id'], 'A')
 
-class ProteinSerializerRetrieveTest(APITestCase):
+class ProteinSerializerRetrieveTest(TestCase):
     protein = None
     sequence = None
     domain = None
@@ -110,7 +114,7 @@ class ProteinSerializerRetrieveTest(APITestCase):
         data = self.serializer.data
         self.assertEqual(data['domains'][0]['pfam_id']['domain_id'], self.domain.pfam.pfam_id)
 
-class ProteinSerializerValidateTest(APITestCase):
+class ProteinSerializerValidateTest(TestCase):
     def test_proteinSerializerValidData(self):
         data = ProteinSerializerFactory.build()
         serializer = ProteinSerializer(data=data)
@@ -138,12 +142,14 @@ class ProteinSerializerValidateTest(APITestCase):
         self.assertFalse(serializer.is_valid())
         self.assertIn('domains', serializer.errors)
 
-class ProteinSerializerCreateTest(APITestCase):
+class ProteinSerializerCreateTest(TestCase):
     data = None
 
     def setUp(self):
         self.data = ProteinSerializerFactory.build()
         PfamFactory.create(pk=self.data['domains'][0]['pfam_id']['domain_id'])
+        PfamFactory.create(pk=self.data['domains'][1]['pfam_id']['domain_id'])
+        PfamFactory.create(pk=self.data['domains'][2]['pfam_id']['domain_id'])
         OrganismFactory.create(pk=self.data['organism']['taxa_id'])
 
         serializer = ProteinSerializer(data=self.data)
@@ -174,3 +180,116 @@ class ProteinSerializerCreateTest(APITestCase):
         protein = Protein.objects.get(pk=self.data['protein_id'])
         domain = Domain.objects.filter(protein=protein)
         self.assertListEqual([protein.protein_id] * 3, [d.protein.protein_id for d in domain])
+
+class PfamApiTest(APITestCase):
+    pfam = None
+
+    def setUp(self):
+        self.pfam = PfamFactory.create()
+
+    def tearDown(self):
+        Pfam.objects.all().delete()
+
+    def test_pfamDetailReturnSuccessStatus(self):
+        url = reverse('pfam_api', kwargs={'pk': self.pfam.pfam_id})
+        response = self.client.get(url, format='json')
+        self.assertContains(response, 'domain_id', status_code=status.HTTP_200_OK)
+        self.assertContains(response, 'domain_description', status_code=status.HTTP_200_OK)
+
+    def test_pfamDetailReturnCorrectContent(self):
+        url = reverse('pfam_api', kwargs={'pk': self.pfam.pfam_id})
+        response = self.client.get(url, format='json')
+        data = json.loads(response.content)
+        self.assertEqual(data['domain_id'], self.pfam.pfam_id)
+        self.assertEqual(data['domain_description'], self.pfam.description)
+
+    def test_pfamDetailReturnNotFoundOnBadPk(self):
+        url = reverse('pfam_api', kwargs={'pk': 'x'})
+        response = self.client.get(url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+class OrganismProteinsApiTest(APITestCase):
+    proteins = None
+    url = None
+
+    def setUp(self):
+        organism = OrganismFactory.create()
+        self.proteins = ProteinFactory.create_batch(3, organism=organism)
+        self.url = reverse('organism_proteins_api', kwargs={'taxa': organism.taxa_id})
+
+    def tearDown(self):
+        Organism.objects.all().delete()
+        Protein.objects.all().delete()
+
+    def test_organismProteinsReturnSuccessStatus(self):
+        response = self.client.get(self.url, format='json')
+        self.assertContains(response, 'protein_id', 3, status.HTTP_200_OK)
+
+    def test_organismProteinsDetailReturnCorrectContent(self):
+        response = self.client.get(self.url, format='json')
+        data = json.loads(response.content)
+        self.assertListEqual([p.protein_id for p in self.proteins], [d['protein_id'] for d in data])
+
+    def test_organismProteinsDetailReturnEmptyOnBadTaxa(self):
+        url = reverse('organism_proteins_api', kwargs={'taxa': 0})
+        response = self.client.get(url, format='json')
+        self.assertContains(response, '[]', 1, status.HTTP_200_OK)
+
+class OrganismPfamsApiTest(APITestCase):
+    pfams = None
+    url = None
+
+    def setUp(self):
+        organism = OrganismFactory.create()
+        proteins = ProteinFactory.create_batch(3, organism=organism)
+        domains = DomainFactory.create_batch(3, protein=factory.Sequence(lambda n: proteins[(n-1) % 3]))
+        self.pfams = [d.pfam for d in domains]
+        self.url = reverse('organism_pfams_api', kwargs={'taxa': organism.taxa_id})
+
+    def tearDown(self):
+        Organism.objects.all().delete()
+        Domain.objects.all().delete()
+        Pfam.objects.all().delete()
+        Protein.objects.all().delete()
+
+    def test_organismPfamsReturnSuccessStatus(self):
+        response = self.client.get(self.url, format='json')
+        self.assertContains(response, 'pfam_id', 3, status.HTTP_200_OK)
+
+    def test_organismPfamsDetailReturnCorrectContent(self):
+        response = self.client.get(self.url, format='json')
+        data = json.loads(response.content)
+        self.assertListEqual([p.pfam_id for p in self.pfams], [d['pfam_id']['domain_id'] for d in data])
+
+    def test_organismPfamsDetailReturnEmptyOnBadTaxa(self):
+        url = reverse('organism_pfams_api', kwargs={'taxa': 0})
+        response = self.client.get(url, format='json')
+        self.assertContains(response, '[]', 1, status.HTTP_200_OK)
+
+class DomainCoverageApiTest(APITestCase):
+    def tearDown(self):
+        Domain.objects.all().delete()
+        Protein.objects.all().delete()
+
+    def test_domainCoverageWithSingleDomain(self):
+        protein = ProteinFactory.create(length=2)
+        DomainFactory.create(protein=protein, start=5, stop=8)
+
+        url = reverse('domain_coverage_api', kwargs={'protein_id': protein.protein_id})
+        response = self.client.get(url, format='json')
+        self.assertContains(response, '1.5', 1, status.HTTP_200_OK)
+
+    def test_domainCoverageWithMultipleDomains(self):
+        protein = ProteinFactory.create(length=4)
+        DomainFactory.create(protein=protein, start=10, stop=20)
+        DomainFactory.create(protein=protein, start=15, stop=30)
+        DomainFactory.create(protein=protein, start=3, stop=17)
+
+        url = reverse('domain_coverage_api', kwargs={'protein_id': protein.protein_id})
+        response = self.client.get(url, format='json')
+        self.assertContains(response, '9.75', 1, status.HTTP_200_OK)
+
+    def test_domainCoverageReturnNotFoundOnBadProtein(self):
+        url = reverse('domain_coverage_api', kwargs={'protein_id': 0})
+        response = self.client.get(url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
