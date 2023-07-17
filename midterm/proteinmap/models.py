@@ -1,3 +1,5 @@
+# I wrote this code
+
 from django.db import models
 
 class Organism(models.Model):
@@ -7,6 +9,7 @@ class Organism(models.Model):
     species = models.CharField(max_length=100, null=False, blank=False)
 
     def __str__(self):
+        """Returns the scientific name (`genus` `species`)."""
         return self.genus + ' ' + self.species
 
 class Protein(models.Model):
@@ -37,3 +40,5 @@ class Domain(models.Model):
     description = models.CharField(max_length=200, null=False, blank=False)
     start = models.IntegerField(null=False, blank=False)
     stop = models.IntegerField(null=False, blank=False)
+
+# end of code I wrote

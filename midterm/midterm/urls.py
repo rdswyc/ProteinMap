@@ -17,6 +17,8 @@ from django.contrib import admin
 from django.urls import include, path
 
 urlpatterns = [
+# I wrote this code
     path('', include('proteinmap.urls')),
+# end of code I wrote
     path('admin/', admin.site.urls),
 ]

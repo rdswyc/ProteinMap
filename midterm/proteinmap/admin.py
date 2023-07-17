@@ -1,3 +1,5 @@
+# I wrote this code
+
 from django.contrib import admin
 
 from .models import *
@@ -25,3 +27,5 @@ admin.site.register(Organism, OrganismAdmin)
 admin.site.register(Protein, ProteinAdmin)
 admin.site.register(Pfam, PfamAdmin)
 admin.site.register(Sequence, SequenceAdmin)
+
+# end of code I wrote

@@ -1,3 +1,5 @@
+# I wrote this code
+
 import os
 import sys
 import django
@@ -10,7 +12,9 @@ django.setup()
 from proteinmap.models import *
 
 
-# Populate Pfam table with pfam_descriptions file
+"""
+Populate Pfam table with pfam_descriptions file
+"""
 
 Pfam.objects.all().delete()
 
@@ -25,7 +29,9 @@ with open(data_file) as csv_file:
     Pfam.objects.bulk_create(pfams.values())
 
 
-# Populate Organisms, Protein and Domain tables with assignment_data_set file
+"""
+Populate Organisms, Protein and Domain tables with assignment_data_set file
+"""
 
 Organism.objects.all().delete()
 Protein.objects.all().delete()
@@ -49,7 +55,10 @@ with open(data_file) as csv_file:
     Protein.objects.bulk_create(proteins.values())
     Domain.objects.bulk_create(domains)
 
-# Populate ProteinSequence table with assignment_data_sequences file
+
+"""
+Populate ProteinSequence table with assignment_data_sequences file
+"""
 
 Sequence.objects.all().delete()
 
@@ -62,3 +71,5 @@ with open(data_file) as csv_file:
         sequences.append(Sequence(protein=proteins[row[0]], sequence=row[1]))
 
     Sequence.objects.bulk_create(sequences)
+
+# end of code I wrote

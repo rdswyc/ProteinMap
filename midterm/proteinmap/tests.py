@@ -1,3 +1,5 @@
+# I wrote this code
+
 import json
 from django.test import TestCase
 from django.urls import reverse
@@ -356,3 +358,5 @@ class DomainCoverageApiTest(APITestCase):
         url = reverse('domain_coverage_api', kwargs={'protein_id': 0})
         response = self.client.get(url, format='json')
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+# end of code I wrote

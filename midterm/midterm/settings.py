@@ -132,7 +132,9 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 
+# I wrote this code
 
-# App configuration
-
+# List of the 20 allowed amino acid characters
 AMINOACIDS = 'ACDEFGHIKLMNPQRSTVWY'
+
+# end of code I wrote
