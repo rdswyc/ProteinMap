@@ -50,10 +50,17 @@ class DomainFactory(factory.django.DjangoModelFactory):
 class ProteinSerializerFactory(factory.DictFactory):
     protein_id = ProteinFactory.build().protein_id
     sequence = SequenceFactory.build().sequence
-    taxonomy = organism = OrganismFactory.build().__dict__
+    taxonomy = organism = {
+        'taxa_id': OrganismFactory.build().taxa_id,
+        'clade': OrganismFactory.build().clade,
+        'genus': OrganismFactory.build().genus,
+        'species': OrganismFactory.build().species
+    }
     length = len(sequence)
     domains = [{
-        **d.__dict__,
+        'description': d.description,
+        'start': d.start,
+        'stop': d.stop,
         'pfam_id': {
             'domain_id': d.pfam.pfam_id,
             'domain_description': d.pfam.description

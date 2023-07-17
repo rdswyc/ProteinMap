@@ -181,30 +181,93 @@ class ProteinSerializerCreateTest(TestCase):
         domain = Domain.objects.filter(protein=protein)
         self.assertListEqual([protein.protein_id] * 3, [d.protein.protein_id for d in domain])
 
-class PfamApiTest(APITestCase):
+class ProteinCreateAPITest(APITestCase):
+    url = reverse('protein_create_api')
+
+    def tearDown(self):
+        Domain.objects.all().delete()
+        Organism.objects.all().delete()
+        Sequence.objects.all().delete()
+        Protein.objects.all().delete()
+        Pfam.objects.all().delete()
+
+    def test_proteinCreateWithValidData(self):
+        data = ProteinSerializerFactory.build()
+        PfamFactory.create(pk=data['domains'][0]['pfam_id']['domain_id'])
+        PfamFactory.create(pk=data['domains'][1]['pfam_id']['domain_id'])
+        PfamFactory.create(pk=data['domains'][2]['pfam_id']['domain_id'])
+        OrganismFactory.create(pk=data['organism']['taxa_id'])
+
+        response = self.client.post(self.url, data, format='json')
+        self.assertContains(response, 'protein_id', status_code=status.HTTP_201_CREATED)
+
+    def test_proteinCreateReturnBadRequestWithInvalidData(self):
+        data = {}
+        response = self.client.post(self.url, data, format='json')
+        self.assertContains(response, '', status_code=status.HTTP_400_BAD_REQUEST)
+
+class ProteinDetailApiTest(APITestCase):
+    protein = None
+    sequence = None
+    url = None
+
+    def setUp(self):
+        self.protein = ProteinFactory.create()
+        self.sequence = SequenceFactory.create(protein=self.protein)
+        self.url = reverse('protein_detail_api', kwargs={'pk': self.protein.protein_id})
+
+    def tearDown(self):
+        Domain.objects.all().delete()
+        Organism.objects.all().delete()
+        Sequence.objects.all().delete()
+        Protein.objects.all().delete()
+
+    def test_proteinDetailReturnSuccessStatus(self):
+        response = self.client.get(self.url, format='json')
+        self.assertContains(response, 'protein_id', status_code=status.HTTP_200_OK)
+        self.assertContains(response, 'sequence', status_code=status.HTTP_200_OK)
+
+    def test_proteinDetailReturnCorrectContent(self):
+        response = self.client.get(self.url, format='json')
+        data = json.loads(response.content)
+        self.assertEqual(data['protein_id'], self.protein.protein_id)
+        self.assertEqual(data['length'], self.protein.length)
+
+    def test_proteinDetailReturnCorrectRelations(self):
+        response = self.client.get(self.url, format='json')
+        data = json.loads(response.content)
+        self.assertEqual(data['sequence'], self.sequence.sequence)
+        self.assertEqual(data['taxonomy']['taxa_id'], self.protein.organism.taxa_id)
+
+    def test_proteinDetailReturnNotFoundOnBadPk(self):
+        url = reverse('protein_detail_api', kwargs={'pk': 'x'})
+        response = self.client.get(url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+class PfamDetailApiTest(APITestCase):
     pfam = None
+    url = None
 
     def setUp(self):
         self.pfam = PfamFactory.create()
+        self.url = reverse('pfam_detail_api', kwargs={'pk': self.pfam.pfam_id})
 
     def tearDown(self):
         Pfam.objects.all().delete()
 
     def test_pfamDetailReturnSuccessStatus(self):
-        url = reverse('pfam_api', kwargs={'pk': self.pfam.pfam_id})
-        response = self.client.get(url, format='json')
+        response = self.client.get(self.url, format='json')
         self.assertContains(response, 'domain_id', status_code=status.HTTP_200_OK)
         self.assertContains(response, 'domain_description', status_code=status.HTTP_200_OK)
 
     def test_pfamDetailReturnCorrectContent(self):
-        url = reverse('pfam_api', kwargs={'pk': self.pfam.pfam_id})
-        response = self.client.get(url, format='json')
+        response = self.client.get(self.url, format='json')
         data = json.loads(response.content)
         self.assertEqual(data['domain_id'], self.pfam.pfam_id)
         self.assertEqual(data['domain_description'], self.pfam.description)
 
     def test_pfamDetailReturnNotFoundOnBadPk(self):
-        url = reverse('pfam_api', kwargs={'pk': 'x'})
+        url = reverse('pfam_detail_api', kwargs={'pk': 'x'})
         response = self.client.get(url, format='json')
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
